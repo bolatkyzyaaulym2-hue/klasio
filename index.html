@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A2RM Function — Курсқа тіркелу</title>
+<style>
+  :root{--green:#1f5a43;--ink:#123b2e;--blue:#1f7aec;--bg:#f8f6f1;--line:#d6dfeb;--muted:#5b6f8a}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+  header{padding:18px 32px;font-size:22px;font-weight:700}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;position:relative;overflow:hidden}
+  main::before,main::after{content:"";position:absolute;background:var(--green);border-radius:50%;z-index:0}
+  main::before{width:520px;height:520px;left:-200px;bottom:-220px}
+  main::after{width:420px;height:420px;right:-160px;top:-160px}
+  .card{position:relative;z-index:1;background:#fff;border-radius:22px;padding:32px 40px;width:100%;max-width:520px;box-shadow:0 10px 40px rgba(18,59,46,.15)}
+  h1{margin:0;text-align:center;font-size:34px}
+  .sub{text-align:center;color:var(--muted);margin:6px 0 18px;font-size:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;padding:10px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:15px;cursor:pointer;color:var(--muted)}
+  .tabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+  label{display:block;font-weight:600;font-size:14px;margin:12px 0 5px}
+  input,select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff;color:var(--ink)}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .go{width:100%;margin-top:20px;padding:14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+  .go:disabled{opacity:.6;cursor:wait}
+  #msg{margin-top:12px;font-size:14px;min-height:20px;text-align:center}
+  .err{color:#c0392b}.ok{color:var(--green)}
+  .note{text-align:center;font-size:12px;color:var(--muted);margin-top:8px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<header>A2RM Function</header>
+<main>
+  <div class="card">
+    <h1>Курсқа тіркелу</h1>
+    <p class="sub">Функция әлеміне қош келдің!</p>
+    <div class="tabs">
+      <button id="tabUp" class="on" type="button">Тіркелу</button>
+      <button id="tabIn" type="button">Кіру</button>
+    </div>
+
+    <div id="signupOnly">
+      <label for="name">Аты-жөні</label>
+      <input id="name" placeholder="Толық аты-жөніңді енгіз" autocomplete="name">
+      <label for="father">Әкесінің аты</label>
+      <input id="father" placeholder="Әкесінің атын енгіз">
+      <label for="grade">Қай сыныпта оқисың?</label>
+      <select id="grade">
+        <option value="">Сыныпты таңда</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+        <option>9</option><option>10</option><option>11</option>
+      </select>
+    </div>
+
+    <label for="email">Электрондық пошта</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+    <label for="pass">Құпиясөз</label>
+    <input id="pass" type="password" placeholder="Кемінде 6 таңба" autocomplete="current-password">
+
+    <button class="go" id="go" type="button">Тіркелу және оқуды бастау</button>
+    <div id="msg" role="status"></div>
+    <p class="note">Деректерің сақталады. Келесі жолы қайта тіркелудің қажеті жоқ.</p>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  // ⬇⬇ ӨЗ КЛЮЧТАРЫҢДЫ ОСЫНДА ҚОЙ (Supabase → Project Settings → API) ⬇⬇
+  const SUPABASE_URL = "https://ruuirxdvjawoecgpungy.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_0luJRp8tK8dXsPaqGCG0GA_ZU931jlL";
+  // ⬆⬆ ───────────────────────────────────────────────────────── ⬆⬆
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
+  let mode = "up";
+
+  db.auth.getSession().then(({data}) => { if (data.session) location.href = "course.html"; });
+
+  function setMode(m){
+    mode = m;
+    $("tabUp").classList.toggle("on", m==="up");
+    $("tabIn").classList.toggle("on", m==="in");
+    $("signupOnly").classList.toggle("hide", m==="in");
+    $("go").textContent = m==="up" ? "Тіркелу және оқуды бастау" : "Кіру";
+    $("pass").autocomplete = m==="up" ? "new-password" : "current-password";
+    say("");
+  }
+  function say(t, cls){ $("msg").textContent = t; $("msg").className = cls||""; }
+  $("tabUp").onclick = () => setMode("up");
+  $("tabIn").onclick = () => setMode("in");
+
+  function explain(e){
+    const m = (e.message||"").toLowerCase();
+    if (m.includes("already")) return "Бұл пошта тіркелген. «Кіру» бөліміне өт.";
+    if (m.includes("invalid login")) return "Пошта немесе құпиясөз қате.";
+    if (m.includes("password")) return "Құпиясөз кемінде 6 таңба болуы керек.";
+    if (m.includes("email")) return "Поштаны дұрыс енгіз.";
+    return "Қате шықты: " + e.message;
+  }
+
+  $("go").onclick = async () => {
+    const email = $("email").value.trim(), password = $("pass").value;
+    if (!email || !password) return say("Пошта мен құпиясөзді енгіз.", "err");
+    $("go").disabled = true; say("");
+    try {
+      if (mode === "up") {
+        const name = $("name").value.trim(), father = $("father").value.trim(), grade = $("grade").value;
+        if (!name || !grade) { say("Аты-жөніңді және сыныбыңды көрсет.", "err"); return; }
+        const {data, error} = await db.auth.signUp({email, password, options:{data:{full_name:name, father_name:father, grade}}});
+        if (error) throw error;
+        if (data.session) location.href = "course.html";
+        else say("Поштаңа растау хаты жіберілді. Сілтемені басып, кейін «Кіру» бөлімінен кір.", "ok");
+      } else {
+        const {error} = await db.auth.signInWithPassword({email, password});
+        if (error) throw error;
+        location.href = "course.html";
+      }
+    } catch (e) { say(explain(e), "err"); }
+    finally { $("go").disabled = false; }
+  };
+</script>
+</body>
+</html>
